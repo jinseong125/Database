@@ -79,6 +79,14 @@ ALTER TABLE tbl_employee ADD CONSTRAINT fk_employee_department
 # 부서테이블의 manager_id 칼럼 외래키 제약조건 추가
 ALTER TABLE tbl_department ADD CONSTRAINT fk_department_manager
   FOREIGN KEY(manager_id) REFERENCES tbl_employee(emp_id) ON DELETE SET NULL;
+  
+### 부서와 직원 테이블은 서로를 참조하는 순환 참조 구조를 가지기 때문에 DROP TABLE만으로 삭제할 수 없습니다.
+### 외래키 제약조건을 먼저 삭제한 다음 테이블을 삭제할 수 있습니다.
+ALTER TABLE tbl_employee DROP FOREIGN KEY fk_employee_department;
+ALTER TABLE tbl_department DROP FOREIGN KEY fk_department_manager;
+
+# 직원, 부서 테이블 삭제 (외래키가 없으므로 순서에 상관이 없습니다.)
+DROP TABLE IF EXISTS tbl_employee, tbl_department;
 
 
 
