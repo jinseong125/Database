@@ -40,7 +40,7 @@ dept_name VARCHAR(100) NOT NULL,
 deop_location VARCHAR(100) NULL,
 manager_id INT NULL, 
 FOREIGN KEY(manager_id) REFERENCES tbl_employee(emp_id)  # 직원 테이블이 있어야만 부서 테이블을 만들 수 있습니다.
-ON DELETE SET NULL  # 부서장이 삭제되면 manager_id를 NULL 처리합니다.
+ON DELETE SET NULL                                        # 부서장이 삭제되면 manager_id를 NULL 처리합니다.
 )ENGINE=InnoDB;
 
 # 직원 테이블 생성
@@ -50,7 +50,7 @@ dept_id INT NULL,
 emp_name VARCHAR(100) NOT NULL,
 hired_at DATE NOT NULL,
 FOREIGN KEY(dept_id) REFERENCES tbl_department(dept_id) # 부서 테이블이 있어야만 사원 테이블을 만들 수 있습니다.
-ON DELETE SET NULL  # 부서가 없어지면 dept_id를 NULL 처리합니다.
+ON DELETE SET NULL                                       # 부서가 없어지면 dept_id를 NULL 처리합니다.
 ) ENGINE=InnoDB;
 
 ### 이와 같이 작업하면 테이블 생성 순서에 문제가 발생하여 작업을 수행할 수 없습니다.
@@ -87,6 +87,13 @@ ALTER TABLE tbl_department DROP FOREIGN KEY fk_department_manager;
 
 # 직원, 부서 테이블 삭제 (외래키가 없으므로 순서에 상관이 없습니다.)
 DROP TABLE IF EXISTS tbl_employee, tbl_department;
+
+### 실무적으로 "순환 참조" 구조는 좋지 않기 때문에,
+### 위 예시의 경우 부서 테이블의 manager_id에 외래키를 걸지 않는 것이 좋습니다.
+### 대신, 잘못된 manager_id의 입력을 막기 위해서 부서 정보 입력 화면을 구성할 때
+### 모든 직원 아이디를 가져와서(fetch 등 활용) 이를 이용해 <select> 태그를 구성한 뒤
+### 이를 이용해 manager_id를 입력할 수 있도록 처리하면 존재하지 않는 직원 아이디를 입력할 수 없게 됩니다.
+
 
 
 
