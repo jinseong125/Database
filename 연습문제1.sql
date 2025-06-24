@@ -34,6 +34,7 @@ cust_name VARCHAR(20)  NULL,
 cust_addr VARCHAR(50)  NULL,
 cust_tel  VARCHAR(20)  NULL
 )ENGINE=InnoDB;
+
 # 3. tbl_order 테이블을 생성하세요.
 /*
     tbl_order 테이블
@@ -52,6 +53,7 @@ FOREIGN KEY(book_id) REFERENCES tbl_book(book_id) ON DELETE CASCADE,
 amount INT NULL,
 ordered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )ENGINE=InnoDB;
+
 # 4. 아래 데이터를 tbl_book 테이블에 INSERT 하세요.
 /*
     책번호  책이름           출판사      가격
@@ -192,16 +194,13 @@ WHERE ordered_at BETWEEN '2020-07-04' AND '2020-07-07';
     고객명  책이름            주문일자
     장미란  역도 단계별 기술  2020-07-10
 */
-SELECT C.cust_name 
-     , B.book_name
-     , O.ordered_at
-  FROM tbl_book B
+SELECT C.cust_name, B.book_name, O.ordered_at
+ FROM tbl_book B
  INNER JOIN tbl_order O
-    ON B.book_id = O.book_id
+ ON B.book_id = O.book_id
  INNER JOIN tbl_customer C
-    ON C.cust_id = O.cust_id
- WHERE O.ordered_at = (SELECT MAX(ordered_at)
-                       FROM tbl_order);
+ ON C.cust_id = O.cust_id
+ WHERE O.ordered_at = (SELECT MAX(ordered_at)FROM tbl_order);
 
 # 13. 주문된 적이 없는 책의 주문번호, 책번호, 책이름을 조회하세요.
 /*
@@ -209,7 +208,11 @@ SELECT C.cust_name
     NULL     4      골프 바이블
     NULL     9      올림픽 이야기
 */
-
+SELECT order_id, b.book_id, book_name
+FROM tbl_order o
+RIGHT JOIN tbl_book b
+ON o.book_id = b.book_id
+WHERE o.order_id IS NULL;
 
 # 14. 모든 서적 중에서 가장 비싼 서적을 구매한 고객이름, 책이름, 가격을 조회하세요.
 # 가장 비싼 서적을 구매한 고객이 없다면 고객 이름은 NULL로 처리하세요.
@@ -217,22 +220,32 @@ SELECT C.cust_name
     고객명  책이름       책가격
     NULL    골프 바이블  35000
 */
-
+SELECT cust_name, book_name, book_price
+FROM tbl_customer c 
+RIGHT JOIN tbl_order o 
+ON c.cust_id = o.cust_id
+RIGHT JOIN tbl_book b
+ON b.book_id = o.book_id
+WHERE book_price = (SELECT MAX(book_price)FROM tbl_book);
 
 # 15. '김연아'가 구매한 도서수를 조회하세요.
 /*
     고객명  구매도서수
     김연아  2
 */
-
+SELECT cust_name, COUNT(order_id)
+FROM tbl_order o
+JOIN tbl_customer c
+ON o.cust_id = c.cust_id
+WHERE cust_name = '김연아';
 
 # 16. 출판사별로 판매된 책의 개수를 조회하세요.
 /*
     출판사     판매된책수
-    굿스포츠   4
-    나이스북   3
-    대한미디어 1
-    이상미디어 2
+    굿스포츠   8
+    나이스북   8
+    대한미디어 2
+    이상미디어 5
     삼성당     0
 */
 
