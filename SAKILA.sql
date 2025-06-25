@@ -318,8 +318,10 @@ HAVING COUNT(*) >=120;
 */
 SELECT c.first_name, c.last_name, f.title
 FROM customer c
-JOIN film f
-
+JOIN rental r ON c.customer_id = r.customer_id
+JOIN inventory i ON r.inventory_id = i.inventory_id
+JOIN film f ON f.film_id = i.film_id
+ORDER BY c.first_name, c.last_name, f.title;
 
 # 2. 고객의 이름과 대여 일자를 조회하세요.
 # 모든 고객 정보를 빠짐 없이 조회하세요.
@@ -331,7 +333,10 @@ JOIN film f
     HELEN       HARRIS      2005-08-02 09:29:11
     HELEN       HARRIS      2005-08-02 15:48:08
 */
-
+SELECT c.first_name, c.last_name, r.rental_date
+FROM customer c
+LEFT JOIN rental r ON c.customer_id = r.customer_id
+ORDER BY c.first_name, c.last_name, r.rental_date;
 
 # 3. 고객의 이름과 그들이 대여한 영화 제목을 조회하세요.
 /*
@@ -342,7 +347,12 @@ JOIN film f
     GENTLEMEN STAGE     HELEN       HARRIS
     FLYING HOOK         HELEN       HARRIS
 */
-
+SELECT f.title, c.first_name, c.last_name
+FROM film f
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON r.inventory_id = i.inventory_id
+JOIN customer c ON c.customer_id = r.customer_id
+ORDER BY f.title, c.first_name, c.last_name;
 
 # 4. 2005년 8월에 직원별로 처리한 총 결제 금액을 조회하세요.
 /*
@@ -350,7 +360,12 @@ JOIN film f
     Mike        Hillyer     11853.65
     Jon         Stephens    12216.49
 */
-
+SELECT c.first_name, c.last_name, SUM(p.amount) total_amount
+FROM customer c
+JOIN payment p ON c.customer_id = p.customer_id
+WHERE p.payment_date >= '2005-08-01' AND p.payment_date < '2005-09-01'
+GROUP BY c.first_name, c.last_name
+ORDER BY total_amount;
 
 # 5. 영화 제목과 해당 영화에 출연한 배우 수를 조회하세요.
 /*
@@ -361,7 +376,10 @@ JOIN film f
     HAROLD FRENCH     7
     HARPER DYING      4
 */
-
+SELECT f.title, COUNT(a.actor_id) 
+FROM film f
+JOIN film_actor a ON f.film_id = a.film_id
+GROUP BY f.film_id;
 
 # 6. "Canada"에 거주하는 고객의 이름과 이메일을 조회하세요.
 /*
@@ -372,7 +390,13 @@ JOIN film f
     CURTIS      IRBY        CURTIS.IRBY@sakilacustomer.org
     TROY        QUIGLEY     TROY.QUIGLEY@sakilacustomer.org
 */
-
+SELECT c.first_name, c.last_name, c.email
+FROM customer c
+JOIN address a ON c.address_id = a.address_id
+JOIN city ci ON a.city_id = ci.city_id
+JOIN country co ON ci.country_id = co.country_id
+WHERE co.country = 'Canada'
+ORDER BY c.first_name, c.last_name, c.email;
 
 # 7. 카테고리가 "Family"인 영화 제목을 조회하세요.
 /*
@@ -383,7 +407,12 @@ JOIN film f
     VIRTUAL SPOILERS
     WILLOW TRACY
 */
-
+SELECT f.title
+FROM film_category fc
+JOIN category ca ON fc.category_id = ca.category_id
+JOIN film f ON f.film_id = fc.film_id
+WHERE ca.name = 'Family'
+ORDER BY f.title;
 
 # 8. 직원의 이름과 주소를 함께 조회하세요.
 /*
@@ -391,7 +420,10 @@ JOIN film f
     Mike        Hillyer     23 Workhaven Lane
     Jon         Stephens    1411 Lillydale Drive
 */
-
+SELECT s.first_name, s.last_name, a.address
+FROM staff s
+JOIN address a ON s.address_id = a.address_id
+ORDER BY s.first_name, s.last_name, a.address;
 
 # 9. "London" 도시에 거주하는 고객의 이름을 조회하세요.
 /*
@@ -399,7 +431,13 @@ JOIN film f
     MATTIE      HOFFMAN
     CECIL       VINES
 */
-
+SELECT c.first_name, c.last_name
+FROM customer c
+JOIN address a ON c.address_id = a.address_id
+JOIN city ci ON a.city_id = ci.city_id
+JOIN country co ON ci.country_id = co.country_id
+WHERE ci.city = 'London'
+ORDER BY c.first_name, c.last_name;
 
 # 10. 카테고리별 평균 상영시간을 조회하세요.
 /*
@@ -410,7 +448,12 @@ JOIN film f
     Sports    128.2027
     Travel    113.3158
 */
-
+SELECT ca.name, AVG(f.length) ave_length
+FROM category ca
+JOIN film_category fc ON ca.category_id = fc.category_id
+JOIN film f ON fc.film_id = f.film_id
+GROUP BY ca.name
+ORDER BY ca.name;
 
 ############################## 서브쿼리 문제 ##############################
 
