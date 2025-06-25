@@ -136,6 +136,7 @@ VALUES
 SELECT book_id, book_name, book_publisher, book_price
 FROM tbl_book
 WHERE book_name LIKE'%올림픽%';
+
 # 8. 가격이 가장 비싼 책을 조회하세요.
 /*
     book_id  book_name    publisher    price

@@ -89,8 +89,9 @@ VALUES (NULL, 2, 1, 2),
     7        SDY      NULL          NULL
 */
 SELECT user_no, user_id, user_mobile1, user_mobile2
-FROM tbl_user
-WHERE user_mobile1 IS NULL;
+  FROM tbl_user
+ WHERE user_mobile1 IS NULL;
+
 
 # 2. 연락처2가 "5"로 시작하는 사용자의 사용자번호, 아이디, 연락처1, 연락처2를 조회하세요.
 /*
@@ -98,8 +99,9 @@ WHERE user_mobile1 IS NULL;
     6        NHS      010           55555555
 */
 SELECT user_no, user_id, user_mobile1, user_mobile2
-FROM tbl_user
-WHERE user_mobile2 LIKE "5%";
+  FROM tbl_user
+ WHERE user_mobile2 LIKE "5%";
+
 
 # 3. 2010년 이후에 가입한 사용자의 사용자번호, 아이디, 가입일을 조회하세요.
 /*
@@ -110,8 +112,13 @@ WHERE user_mobile2 LIKE "5%";
     10       PSH      2012-05-05
 */
 SELECT user_no, user_id, create_date
-FROM tbl_user
-WHERE create_date > '2010-01-01';
+  FROM tbl_user
+ WHERE YEAR(create_date) >= 2010;
+
+SELECT user_no, user_id, create_date
+  FROM tbl_user
+ WHERE EXTRACT(YEAR FROM create_date) >= 2010;
+
 
 # 4. 사용자번호와 연락처1, 연락처2를 연결하여 조회하세요. 
 # 연락처가 없는 경우 NULL 대신 "None"으로 조회하세요.
@@ -128,8 +135,10 @@ WHERE create_date > '2010-01-01';
     9        01077777777
     10       01088888888
 */
-SELECT user_no, CONCAT(IFNULL(user_mobile1,''),IFNULL(user_mobile2,'NONE'))
-FROM tbl_user;
+SELECT user_no
+     , IFNULL(CONCAT(user_mobile1, user_mobile2), "None") AS contact
+  FROM tbl_user;
+
 
 # 5. 지역별 사용자수를 조회하세요.
 /*
@@ -140,9 +149,11 @@ FROM tbl_user;
     충남   1
     경기   2
 */
-SELECT user_addr, COUNT(*)
-FROM tbl_user
-GROUP BY user_addr;
+SELECT user_addr AS 주소
+     , COUNT(*)  AS 사용자수
+  FROM tbl_user
+ GROUP BY user_addr;
+
 
 # 6. "서울", "경기"를 제외한 지역별 사용자수를 조회하세요.
 /*
@@ -151,10 +162,12 @@ GROUP BY user_addr;
     경남   2
     충남   1
 */
-SELECT user_addr, COUNT(*)
-FROM tbl_user
-WHERE user_addr NOT IN ('서울','경기')
-GROUP BY user_addr;
+SELECT user_addr AS 주소
+     , COUNT(*)  AS 사용자수
+  FROM tbl_user
+ WHERE user_addr NOT IN("서울", "경기")  -- WHERE user_addr != "서울" AND user_addr != "경기"
+ GROUP BY user_addr;
+
 
 # 7. 구매내역이 없는 사용자를 조회하세요.
 /*
@@ -165,11 +178,12 @@ GROUP BY user_addr;
     7     SDY
     1     YJS
 */
-SELECT u.user_no, u.user_id
-FROM tbl_buy b
-RIGHT Join tbl_user u
-ON u.user_no = b.user_no
-WHERE b.user_no IS NULL;
+SELECT user_no AS 번호
+     , user_id AS 아이디
+  FROM tbl_user
+ WHERE user_no NOT IN(SELECT user_no
+                        FROM tbl_buy);
+
 
 # 8. 카테고리별 구매횟수를 조회하세요.
 /*
@@ -179,13 +193,16 @@ WHERE b.user_no IS NULL;
     서적      2
     전자      4
 */
-SELECT p.category, COUNT(b.buy_amount)
-FROM tbl_buy b
-JOIN tbl_product p
-ON p.prod_code = b.prod_code
-GROUP BY p.category;
+SELECT P.category AS 카테고리
+     , COUNT(B.buy_no) AS 구매횟수
+  FROM tbl_product P 
+ INNER JOIN tbl_buy B
+    ON P.prod_code = B.prod_code
+ GROUP BY P.category;
+
 
 # 9. 아이디별 구매횟수를 조회하세요.
+# 구매한 적이 없는 아이디는 조회하지 마세요.
 /*
     아이디  구매횟수
     KHD     3
@@ -194,11 +211,13 @@ GROUP BY p.category;
     LHJ     2
     PSH     3
 */
-SELECT u.user_id, COUNT(b.buy_amount)
-FROM tbl_user u
-JOIN tbl_buy b
-ON u.user_no = b.user_no
-GROUP BY u.user_id;
+SELECT U.user_id AS 아이디
+     , COUNT(B.buy_no) AS 구매횟수
+  FROM tbl_user U 
+ INNER JOIN tbl_buy B
+    ON U.user_no = B.user_no
+ GROUP BY U.user_id;
+
 
 # 10. 아이디별 구매횟수를 조회하세요. 
 # 구매 이력이 없는 경우 구매횟수는 0으로 조회하고 아이디의 오름차순으로 조회하세요.
@@ -215,12 +234,15 @@ GROUP BY u.user_id;
     SDY     신동엽  0
     YJS     유재석  0
 */
-SELECT u.user_id, u.user_name, COUNT(b.buy_amount)
-FROM tbl_user u
-LEFT JOIN tbl_buy b
-ON u.user_no = b.user_no
-GROUP BY u.user_id
-ORDER BY u.user_id ASC;
+SELECT U.user_id AS 아이디
+     , U.user_name AS 고객명
+     , COUNT(B.buy_no) AS 구매횟수
+  FROM tbl_user U
+  LEFT OUTER JOIN tbl_buy B
+    ON U.user_no = B.user_no
+ GROUP BY U.user_id, U.user_name
+ ORDER BY U.user_id;
+
 
 # 11. 모든 상품의 상품명과 판매횟수를 조회하세요. 판매 이력이 없는 상품은 0으로 조회하세요.
 /*
@@ -233,11 +255,13 @@ ORDER BY u.user_id ASC;
     메모리  1개
     벨트    0개
 */
-SELECT p.prod_name 상품명, COUNT(b.buy_amount) 판매횟수
-FROM tbl_product p
-LEFT JOIN tbl_buy b
-ON p.prod_code = b.prod_code
-GROUP BY p.prod_name;
+SELECT P.prod_name AS 상품명
+     , CONCAT(COUNT(B.buy_no), "개") AS 판매횟수
+  FROM tbl_product P 
+  LEFT OUTER JOIN tbl_buy B
+    ON P.prod_code = B.prod_code
+ GROUP BY P.prod_code, P.prod_name;
+
 
 # 12. 카테고리가 "전자"인 상품을 구매한 고객의 구매내역을 조회하세요.
 /*
@@ -247,11 +271,16 @@ GROUP BY p.prod_name;
     박수홍  모니터  1000
     박수홍  메모리  800
 */
-SELECT u.user_name, p.prod_name, p.prod_price * b.buy_amount
-FROM tbl_user u
-JOIN tbl_buy b ON u.user_no = b.user_no
-JOIN tbl_product p ON p.prod_code = b.prod_code
-WHERE p.category="전자";
+SELECT U.user_name AS 고객명
+     , P.prod_name AS 상품명
+     , P.prod_price * B.buy_amount AS 구매액
+  FROM tbl_user U 
+ INNER JOIN tbl_buy B
+    ON U.user_no = B.user_no 
+ INNER JOIN tbl_product P
+    ON P.prod_code = B.prod_code
+ WHERE P.category = "전자";
+
 
 # 13. 상품을 구매한 이력이 있는 고객의 아이디, 고객명, 구매횟수, 총구매액을 조회하세요.
 /*
@@ -262,11 +291,17 @@ WHERE p.category="전자";
     KJD     김제동  1         75
     LHJ     이휘재  2         80
 */
-SELECT u.user_id, u.user_name, COUNT(*), SUM(p.prod_price * b.buy_amount)
-FROM tbl_user u
-JOIN tbl_buy b ON u.user_no = b.user_no
-JOIN tbl_product p ON b.prod_code = p.prod_code
-GROUP BY u.user_id, u.user_name;
+SELECT U.user_id AS 아이디
+     , U.user_name AS 고객명
+     , COUNT(B.buy_no) AS 구매횟수
+     , SUM(P.prod_price * B.buy_amount) AS 총구매액
+  FROM tbl_user U 
+ INNER JOIN tbl_buy B
+    ON U.user_no = B.user_no 
+ INNER JOIN tbl_product P
+    ON P.prod_code = B.prod_code
+ GROUP BY U.user_id, U.user_name;
+
 
 # 14. 구매횟수가 2회 이상인 고객명과 구매횟수를 조회하세요.
 /*
@@ -275,12 +310,14 @@ GROUP BY u.user_id, u.user_name;
     이휘재  2
     박수홍  3
 */
-SELECT u.user_name, count(b.buy_amount)
-FROM tbl_user u
-JOIN tbl_buy b
-ON u.user_no = b.user_no
-GROUP BY u.user_name
-HAVING COUNT(b.buy_amount) >= 2;
+SELECT U.user_name AS 고객명
+     , COUNT(B.buy_no) AS 구매횟수
+  FROM tbl_user U 
+ INNER JOIN tbl_buy B
+    ON U.user_no = B.user_no
+ GROUP BY U.user_no, U.user_name
+HAVING COUNT(B.buy_no) >= 2;
+
 
 # 15. 어떤 고객이 어떤 상품을 구매했는지 조회하세요. 
 # 구매 이력이 없는 고객도 조회하고 아이디로 오름차순 정렬하세요.
@@ -302,56 +339,63 @@ HAVING COUNT(b.buy_amount) >= 2;
     신동엽   NULL
     유재석   NULL
 */
-SELECT u.user_name, p.prod_name
-FROM tbl_user u
-LEFT JOIN tbl_buy b
-ON u.user_no = b.user_no
-LEFT JOIN tbl_product p
-ON p.prod_code = b.prod_code
-ORDER BY u.user_id ASC;
+SELECT U.user_name AS 고객명
+     , P.prod_name AS 구매상품
+  FROM tbl_user U 
+  LEFT OUTER JOIN tbl_buy B
+    ON U.user_no = B.user_no 
+  LEFT OUTER JOIN tbl_product P
+    ON P.prod_code = B.prod_code
+ ORDER BY U.user_id;
+
 
 # 16. 상품 테이블에서 상품명이 "책"인 상품의 카테고리를 "서적"으로 수정하세요.
 UPDATE tbl_product
-SET category = '서적'
-WHERE prod_name='책';
+   SET category = "서적"
+ WHERE prod_name = "책";
+
 
 # 17. 연락처1이 "011"인 사용자의 연락처1을 모두 "010"으로 수정하세요.
 UPDATE tbl_user
-SET user_mobile1 = "010"
-WHERE user_mobile1 = "011";
+   SET user_mobile1 = "010"
+ WHERE user_mobile1 = "011";
+
 
 # 18. 구매번호가 가장 큰 구매내역을 삭제하세요.
 # MySQL은 UPDATE/DELETE 문에서 자기 자신의 테이블 데이터를 직접 사용할 수 없습니다. 
 # (Error Code: 1093.)
 # 아래와 같은 형식의 쿼리문은 오류가 발생합니다.
-DELETE FROM tbl_buy
- WHERE buy_no = (
- SELECT MAX(buy_no)
+DELETE
+  FROM tbl_buy
+ WHERE buy_no = (SELECT MAX(buy_no)
                    FROM tbl_buy);
+
 # 최대 구매번호를 구할 때 서브쿼리를 하나 더 활용해서 해결해 보세요.
-DELETE FROM tbl_buy
- WHERE buy_no = (
- SELECT max_buy_no 
- FROM  (
- SELECT MAX(buy_no) AS max_buy_no
-                   FROM tbl_buy) AS 구매번호);
+DELETE
+  FROM tbl_buy
+ WHERE buy_no = (SELECT a.max_buy_no
+                   FROM (SELECT MAX(buy_no) AS max_buy_no
+                           FROM tbl_buy) a);
+
 
 # 19. 상품코드가 1인 상품을 삭제하세요. 
 # 삭제 이후 상품번호가 1인 상품의 구매내역을 조회하세요.
 # 1) 삭제
-DELETE FROM tbl_product
-WHERE prod_code = 1;
+DELETE 
+  FROM tbl_product 
+ WHERE prod_code = 1;
 # 2) 삭제 후 구매내역 조회
-SELECT * FROM tbl_buy;
+SELECT * 
+  FROM tbl_buy;
 
 
 # 20. 사용자번호가 5인 사용자를 삭제하세요. 
 # 사용자번호가 5인 사용자의 구매 내역을 먼저 삭제한 뒤 진행해야 합니다.
-
-DELETE FROM tbl_user
-WHERE user_no = 5;
-SELECT * FROM tbl_user;
-
-
-
-
+# 1) 사용자 삭제
+DELETE
+  FROM tbl_buy
+ WHERE user_no = 5;
+# 2) 구매 내역 삭제
+DELETE
+  FROM tbl_user
+ WHERE user_no = 5;
